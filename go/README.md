@@ -43,6 +43,39 @@ if err != nil { return err }
 detail, err := contractClient.Detail(ctx, "BTC_USDT")
 ```
 
+Initialize current perpetual funding and price state through REST:
+
+```go
+funding, err := contractClient.FundingRate(ctx, "BTC_USDT")
+if err != nil { return err }
+// funding.FundingRate, funding.NextSettleTime, funding.CollectCycle
+
+fair, err := contractClient.FairPrice(ctx, "BTC_USDT")
+if err != nil { return err }
+index, err := contractClient.IndexPrice(ctx, "BTC_USDT")
+if err != nil { return err }
+```
+
+Retrieve settled funding rates for startup backfill or gap reconciliation:
+
+```go
+history, err := contractClient.FundingRateHistory(ctx, contract.FundingRateHistoryParams{
+	Symbol:   "BTC_USDT",
+	PageNum:  1,
+	PageSize: 1000,
+})
+```
+
+Subscribe to current Contract values after initialization:
+
+```go
+if err := contractWebSocket.SubscribeFundingRate(ctx, "BTC_USDT"); err != nil { return err }
+if err := contractWebSocket.SubscribeFairPrice(ctx, "BTC_USDT"); err != nil { return err }
+if err := contractWebSocket.SubscribeIndexPrice(ctx, "BTC_USDT"); err != nil { return err }
+```
+
+MEXC calls its mark-price equivalent `fairPrice`; the SDK preserves that venue-native name. `nextSettleTime` is the next funding timestamp, `collectCycle` is the current funding interval, and ticker `holdVol` is the venue's open-position volume field. Downstream normalization may map these to mark price, next funding time, funding interval, and open interest while retaining the original source semantics.
+
 ## CLI
 
 Build the CLI without initiating a network connection:

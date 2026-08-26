@@ -122,16 +122,93 @@ type FundingRate struct {
 	NextSettleTime int64   `json:"nextSettleTime"`
 	Timestamp      int64
 }
+
+// UnmarshalJSON decodes documented funding-rate field variants.
+//
+// Version:
+//   - 2026-08-26: Added support for the documented rate field.
+func (v *FundingRate) UnmarshalJSON(data []byte) error {
+	if v == nil {
+		return fmt.Errorf("failed to decode contract websocket funding rate: destination=null")
+	}
+	var wire struct {
+		Symbol         string  `json:"symbol"`
+		FundingRate    Decimal `json:"fundingRate"`
+		Rate           Decimal `json:"rate"`
+		NextSettleTime int64   `json:"nextSettleTime"`
+	}
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return fmt.Errorf("failed to decode contract websocket funding rate: %w", err)
+	}
+	v.Symbol = wire.Symbol
+	v.FundingRate = wire.FundingRate
+	if v.FundingRate == "" {
+		v.FundingRate = wire.Rate
+	}
+	v.NextSettleTime = wire.NextSettleTime
+	return nil
+}
+
 type IndexPrice struct {
 	Symbol     string  `json:"symbol"`
 	IndexPrice Decimal `json:"indexPrice"`
 	Timestamp  int64
 }
+
+// UnmarshalJSON decodes documented index-price field variants.
+//
+// Version:
+//   - 2026-08-26: Added support for the documented price field.
+func (v *IndexPrice) UnmarshalJSON(data []byte) error {
+	if v == nil {
+		return fmt.Errorf("failed to decode contract websocket index price: destination=null")
+	}
+	var wire struct {
+		Symbol     string  `json:"symbol"`
+		IndexPrice Decimal `json:"indexPrice"`
+		Price      Decimal `json:"price"`
+	}
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return fmt.Errorf("failed to decode contract websocket index price: %w", err)
+	}
+	v.Symbol = wire.Symbol
+	v.IndexPrice = wire.IndexPrice
+	if v.IndexPrice == "" {
+		v.IndexPrice = wire.Price
+	}
+	return nil
+}
+
 type FairPrice struct {
 	Symbol    string  `json:"symbol"`
 	FairPrice Decimal `json:"fairPrice"`
 	Timestamp int64
 }
+
+// UnmarshalJSON decodes documented fair-price field variants.
+//
+// Version:
+//   - 2026-08-26: Added support for the documented price field.
+func (v *FairPrice) UnmarshalJSON(data []byte) error {
+	if v == nil {
+		return fmt.Errorf("failed to decode contract websocket fair price: destination=null")
+	}
+	var wire struct {
+		Symbol    string  `json:"symbol"`
+		FairPrice Decimal `json:"fairPrice"`
+		Price     Decimal `json:"price"`
+	}
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return fmt.Errorf("failed to decode contract websocket fair price: %w", err)
+	}
+	v.Symbol = wire.Symbol
+	v.FairPrice = wire.FairPrice
+	if v.FairPrice == "" {
+		v.FairPrice = wire.Price
+	}
+	return nil
+}
+
 type Message struct {
 	Envelope    Envelope
 	Ticker      *Ticker

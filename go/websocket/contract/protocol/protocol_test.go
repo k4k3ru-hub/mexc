@@ -32,3 +32,31 @@ func TestDecodeTickerFundingAndPrices(t *testing.T) {
 		}
 	}
 }
+
+// TestDecodeFundingAndPricesCompletePayloads verifies documented and field-table variants.
+//
+// Version:
+//   - 2026-08-26: Added.
+func TestDecodeFundingAndPricesCompletePayloads(t *testing.T) {
+	funding, err := Decode([]byte(`{"channel":"push.funding.rate","symbol":"BTC_USDT","ts":1587442022003,"data":{"rate":0.001,"symbol":"BTC_USDT","nextSettleTime":1609833600000}}`))
+	if err != nil {
+		t.Fatalf("Decode(funding) error = %v", err)
+	}
+	if funding.FundingRate == nil || funding.FundingRate.Symbol != "BTC_USDT" || funding.FundingRate.FundingRate != "0.001" || funding.FundingRate.NextSettleTime != 1609833600000 || funding.FundingRate.Timestamp != 1587442022003 {
+		t.Fatalf("funding = %#v", funding.FundingRate)
+	}
+	index, err := Decode([]byte(`{"channel":"push.index.price","symbol":"BTC_USDT","ts":1587442022004,"data":{"price":6861.6,"symbol":"BTC_USDT"}}`))
+	if err != nil {
+		t.Fatalf("Decode(index) error = %v", err)
+	}
+	if index.IndexPrice == nil || index.IndexPrice.IndexPrice != "6861.6" || index.IndexPrice.Timestamp != 1587442022004 {
+		t.Fatalf("index = %#v", index.IndexPrice)
+	}
+	fair, err := Decode([]byte(`{"channel":"push.fair.price","symbol":"BTC_USDT","ts":1587442022005,"data":{"fairPrice":"6867.400","symbol":"BTC_USDT"}}`))
+	if err != nil {
+		t.Fatalf("Decode(fair) error = %v", err)
+	}
+	if fair.FairPrice == nil || fair.FairPrice.FairPrice != "6867.400" || fair.FairPrice.Timestamp != 1587442022005 {
+		t.Fatalf("fair = %#v", fair.FairPrice)
+	}
+}
