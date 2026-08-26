@@ -18,13 +18,13 @@ func (f *fakeExecutor) Do(_ context.Context, r transport.Request) ([]byte, error
 	return f.response, f.err
 }
 func TestDetailAndUSDTPerpetual(t *testing.T) {
-	f := &fakeExecutor{response: []byte(`{"success":true,"code":0,"data":[{"symbol":"BTC_USDT","settleCoin":"USDT","contractType":1,"contractSize":0.000000000000000001,"state":0}]}`)}
+	f := &fakeExecutor{response: []byte(`{"success":true,"code":0,"data":[{"symbol":"BTC_USDT","baseCoin":"BTC","quoteCoin":"USDT","settleCoin":"USDT","contractType":1,"contractSize":0.000000000000000001,"volUnit":"1","volScale":0,"state":0}]}`)}
 	c, _ := NewClientWithExecutor(f)
 	out, err := c.Detail(context.Background(), "BTC_USDT")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !out[0].IsUSDTMarginedPerpetual() || out[0].ContractSize != "0.000000000000000001" {
+	if !out[0].IsUSDTMarginedPerpetual() || out[0].ContractSize != "0.000000000000000001" || out[0].BaseCoin != "BTC" || out[0].QuoteCoin != "USDT" || out[0].SettleCoin != "USDT" || out[0].ContractType != 1 || out[0].VolUnit != "1" || out[0].VolScale != 0 {
 		t.Fatalf("unexpected: %#v", out[0])
 	}
 }
@@ -127,5 +127,28 @@ func TestTickerUsesDocumentedQuery(t *testing.T) {
 	}
 	if f.request.Path != "/api/v1/contract/ticker" || f.request.Query.Get("symbol") != "BTC_USDT" {
 		t.Fatalf("request: %#v", f.request)
+	}
+}
+
+// TestTickerDecodesCompleteOpenInterestPayload verifies current Open Interest and conversion fields.
+//
+// Version:
+//   - 2026-08-26: Added.
+func TestTickerDecodesCompleteOpenInterestPayload(t *testing.T) {
+	f := &fakeExecutor{response: []byte(`{"success":true,"code":0,"data":{"symbol":"BTC_USDT","lastPrice":6865.5,"bid1":"6865.0","ask1":6866.5,"volume24":164586129,"amount24":"1129912772928.5","high24Price":7223.5,"lower24Price":6756,"riseFallRate":-0.0424,"riseFallValue":"-304.5","indexPrice":6861.6,"fairPrice":"6867.400","fundingRate":0.0008,"maxBidPrice":7073.42,"minAskPrice":6661.37,"holdVol":2284742,"timestamp":1587442022003,"contractId":9007199254740993}}`)}
+	c, err := NewClientWithExecutor(f)
+	if err != nil {
+		t.Fatalf("NewClientWithExecutor() error = %v", err)
+	}
+	out, err := c.Ticker(context.Background(), "BTC_USDT")
+	if err != nil {
+		t.Fatalf("Ticker() error = %v", err)
+	}
+	if out.One == nil {
+		t.Fatal("Ticker().One = nil")
+	}
+	ticker := out.One
+	if ticker.Symbol != "BTC_USDT" || ticker.HoldVol != "2284742" || ticker.FairPrice != "6867.400" || ticker.IndexPrice != "6861.6" || ticker.FundingRate != "0.0008" || ticker.Timestamp != 1587442022003 || ticker.ContractID.String() != "9007199254740993" || ticker.Amount24 != "1129912772928.5" {
+		t.Fatalf("ticker = %#v", ticker)
 	}
 }

@@ -223,6 +223,7 @@ type Message struct {
 // Decode decodes a Contract JSON control or market-data envelope.
 //
 // Version:
+//   - 2026-08-26: Added ticker symbol and timestamp envelope fallbacks.
 //   - 2026-08-19: Added.
 func Decode(data []byte) (*Message, error) {
 	d := json.NewDecoder(bytes.NewReader(data))
@@ -239,6 +240,12 @@ func Decode(data []byte) (*Message, error) {
 		var v Ticker
 		if err := decodeData(e.Data, &v); err != nil {
 			return nil, err
+		}
+		if v.Symbol == "" {
+			v.Symbol = e.Symbol
+		}
+		if v.Timestamp == 0 {
+			v.Timestamp = e.Timestamp
 		}
 		m.Ticker = &v
 	case "push.deal":

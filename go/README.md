@@ -41,6 +41,10 @@ book, err := spotClient.Depth(ctx, spot.DepthParams{Symbol: "BTCUSDT", Limit: 10
 contractClient, err := mexc.NewContractRESTClient(nil)
 if err != nil { return err }
 detail, err := contractClient.Detail(ctx, "BTC_USDT")
+if err != nil { return err }
+ticker, err := contractClient.Ticker(ctx, "BTC_USDT")
+if err != nil { return err }
+// ticker.One.HoldVol, ticker.One.FairPrice, ticker.One.Timestamp
 ```
 
 Initialize current perpetual funding and price state through REST:
@@ -69,12 +73,23 @@ history, err := contractClient.FundingRateHistory(ctx, contract.FundingRateHisto
 Subscribe to current Contract values after initialization:
 
 ```go
+if err := contractWebSocket.SubscribeTicker(ctx, "BTC_USDT"); err != nil { return err }
 if err := contractWebSocket.SubscribeFundingRate(ctx, "BTC_USDT"); err != nil { return err }
 if err := contractWebSocket.SubscribeFairPrice(ctx, "BTC_USDT"); err != nil { return err }
 if err := contractWebSocket.SubscribeIndexPrice(ctx, "BTC_USDT"); err != nil { return err }
 ```
 
 MEXC calls its mark-price equivalent `fairPrice`; the SDK preserves that venue-native name. `nextSettleTime` is the next funding timestamp, `collectCycle` is the current funding interval, and ticker `holdVol` is the venue's open-position volume field. Downstream normalization may map these to mark price, next funding time, funding interval, and open interest while retaining the original source semantics.
+
+For Open Interest state, combine REST Contract Detail and Ticker at startup,
+then use the WebSocket Ticker for subsequent updates. `holdVol` is preserved as
+the venue-reported contract quantity, while `contractSize` and `baseCoin` come
+from Contract Detail. Consumers may derive base-asset quantity as
+`holdVol * contractSize` and notional value as that quantity multiplied by
+`fairPrice`. Use the ticker `timestamp` as the venue observation time;
+WebSocket decoding falls back to the envelope `ts` when the nested timestamp
+is absent. Quantity normalization and notional calculation belong to the
+consuming service rather than this SDK.
 
 ## CLI
 

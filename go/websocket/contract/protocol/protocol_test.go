@@ -33,6 +33,38 @@ func TestDecodeTickerFundingAndPrices(t *testing.T) {
 	}
 }
 
+// TestDecodeTickerCompleteOpenInterestPayload verifies Open Interest, prices, and venue time.
+//
+// Version:
+//   - 2026-08-26: Added.
+func TestDecodeTickerCompleteOpenInterestPayload(t *testing.T) {
+	out, err := Decode([]byte(`{"channel":"push.ticker","symbol":"BTC_USDT","ts":1587442022003,"data":{"ask1":6866.5,"bid1":"6865.0","contractId":9007199254740993,"fairPrice":"6867.400","fundingRate":0.0008,"high24Price":7223.5,"indexPrice":6861.6,"lastPrice":6865.5,"lower24Price":6756,"riseFallRate":-0.0424,"riseFallValue":"-304.5","symbol":"BTC_USDT","timestamp":1587442022004,"holdVol":2284742,"volume24":164586129}}`))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+	if out.Ticker == nil {
+		t.Fatal("Ticker = nil")
+	}
+	ticker := out.Ticker
+	if ticker.Symbol != "BTC_USDT" || ticker.HoldVol != "2284742" || ticker.FairPrice != "6867.400" || ticker.IndexPrice != "6861.6" || ticker.FundingRate != "0.0008" || ticker.Timestamp != 1587442022004 || ticker.ContractID.String() != "9007199254740993" {
+		t.Fatalf("ticker = %#v", ticker)
+	}
+}
+
+// TestDecodeTickerFallsBackToEnvelopeFields verifies symbol and timestamp fallbacks.
+//
+// Version:
+//   - 2026-08-26: Added.
+func TestDecodeTickerFallsBackToEnvelopeFields(t *testing.T) {
+	out, err := Decode([]byte(`{"channel":"push.ticker","symbol":"BTC_USDT","ts":1587442022003,"data":{"holdVol":"2284742","fairPrice":"6867.4"}}`))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+	if out.Ticker == nil || out.Ticker.Symbol != "BTC_USDT" || out.Ticker.Timestamp != 1587442022003 || out.Ticker.HoldVol != "2284742" {
+		t.Fatalf("ticker = %#v", out.Ticker)
+	}
+}
+
 // TestDecodeFundingAndPricesCompletePayloads verifies documented and field-table variants.
 //
 // Version:
