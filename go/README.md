@@ -133,3 +133,10 @@ MEXC's January 2026 futures-domain announcement moved Contract REST from `https:
 Tests use fixtures and fake transports and do not contact live MEXC endpoints. This module supports public market data only and does not implement Trading APIs.
 
 Use of this code does not grant permission to commercially use, store, retransmit, redistribute, publish, or create derivative products from MEXC data. Before any production or K4K3RU use, the user must review the [MEXC User Agreement](https://www.mexc.com/ja-JP/terms/), current API documentation, applicable regional restrictions, and obtain any required written consent or data license from MEXC.
+
+## Go toolchain
+
+Development and verification use Go 1.27.3. The module minimum Go version is
+unchanged. The `toolchain` directive selects Go when working in this module;
+consuming applications must select a patched Go toolchain and rebuild to receive
+TLS security fixes.
